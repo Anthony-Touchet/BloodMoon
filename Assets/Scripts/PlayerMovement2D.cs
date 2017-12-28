@@ -28,18 +28,35 @@ public class PlayerMovement2D : MonoBehaviour
 	{
         var movement = new Vector3();
 
-        // Get Input
-        if (Input.GetKey(rightControl))
-            movement += transform.right;
+	    if (!Input.GetKey(rightControl) && !Input.GetKey(leftControl))
+	    {
+            // Stop movement if not pressing a button
+	        m_Rigidbody2D.velocity += new Vector2(-m_Rigidbody2D.velocity.x, 0);
+	    }
 
-        if (Input.GetKey(leftControl))
-            movement -= transform.right;
+	    else
+	    {
+	        // Get Input
+	        if (Input.GetKey(rightControl))
+	        {
+                transform.right = Vector3.right;
+            }
+
+	        if (Input.GetKey(leftControl))
+	        {
+	            transform.right = Vector3.left;
+	        }
+	        movement += transform.right;
+        }
 
         // Determine if we are in the air
-        var velocity = (m_CanJump) ? movement.normalized * m_MovementSpeed : movement.normalized * m_MovementSpeed / 2;
+        var velocity = (m_CanJump) ? movement.normalized * m_MovementSpeed : movement.normalized * m_MovementSpeed / 5;
 
         // Apply motion
-        transform.Translate(velocity);
+        m_Rigidbody2D.AddForce(velocity, ForceMode2D.Impulse);
+
+	    m_Rigidbody2D.velocity = (m_Rigidbody2D.velocity.magnitude > movementSpeed)
+	        ? m_Rigidbody2D.velocity.normalized * movementSpeed : m_Rigidbody2D.velocity;
 
         // Can the play jump
         if (!Input.GetKeyDown(jumpControl) || !m_CanJump) return;
