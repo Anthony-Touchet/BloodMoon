@@ -5,38 +5,70 @@ namespace Scripts.Source.Crafting
 {
     public class BackPack
     {
-        public Dictionary<Item, uint> Inventory { get; private set;}
+        public Dictionary<Item, int> Inventory { get; private set;}
+        public int ItemStackLimit { get; private set;}
 
-        public BackPack()
+        public BackPack(int limit)
         {
-            Inventory = new Dictionary<Item, uint>();
+            Inventory = new Dictionary<Item, int>();
+            ItemStackLimit = limit;
         }
 
-        /*Add a number of value from an Item key or a new key if the key does not appear in the Inventory*/
-        public bool AddItem(Item item, uint num)
+        /*Add a number of value from an Item key or a new key if the key does not appear in the Inventory
+            0 = New key of the item was added
+            1 = Key already existed and was sucessfully added
+            2 = Some was added, but the limit was reached so only up to the limit was added.
+        */
+        public int AddItem(Item item, int num)
         {
-            var invItem = CheckInventory(item);
+            Item invItem = null;
+
+            foreach (var iItem in Inventory)
+            {
+                if (Item.ItemCheck(item, iItem.Key) && iItem.Value != ItemStackLimit)
+                    invItem = iItem.Key;
+            }
+
             if (invItem != null)
             {
                 Inventory[invItem] += num;
-                return true;
+                if (Inventory[invItem] > ItemStackLimit)
+                {
+                    ///TODO: Add overflow stack
+                    Inventory[invItem] = ItemStackLimit;
+                    return 2;
+                }
+                return 1;
             }
 
             Inventory.Add(item, num);
-            return true;
+            return 0;
         }
         
         /*Removes a number of value from an Item key*/
-        public bool SubtractItem(Item item, uint num)
+        public bool SubtractItem(Item item, int num)
         {
-            var invItem = CheckInventory(item);
-            if (invItem != null)
+            for(int i = num; i > 0;)
             {
-                Inventory[invItem] -= num;
-                CleanInventory(invItem);
-                return true;
+                Item invItem = null;
+
+                foreach (var iItem in Inventory)
+                {
+                    if (Item.ItemCheck(item, iItem.Key))
+                        invItem = iItem.Key;
+                }
+
+                if (invItem != null)
+                {
+                    var oldvalue = Inventory[invItem];
+                    Inventory[invItem] -= i;                   
+                    i -= oldvalue;
+                    CleanInventory(invItem);
+                    continue;
+                }
+                return false;
             }
-            return false;
+            return true;
         }
 
         /*Removes item entirely from the Inventory*/
@@ -59,17 +91,6 @@ namespace Scripts.Source.Crafting
                 return true;
             }
             return false;
-        }
-
-        /*Checks to see if the Item is already in the list*/
-        private Item CheckInventory(Item item)
-        {
-            foreach(var iItem in Inventory)
-            {
-                if (Item.ItemCheck(item, iItem.Key))
-                    return iItem.Key;
-            }
-            return null;
         }
     }
 }
